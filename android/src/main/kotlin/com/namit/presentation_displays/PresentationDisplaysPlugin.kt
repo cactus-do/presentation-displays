@@ -19,7 +19,6 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugin.common.PluginRegistry
 import org.json.JSONObject
 
 /** PresentationDisplaysPlugin */
@@ -30,39 +29,20 @@ class PresentationDisplaysPlugin : FlutterPlugin, ActivityAware, MethodChannel.M
   private var flutterEngineChannel: MethodChannel? = null
   private var context: Context? = null
   private var presentation: PresentationDisplay? = null
+  private var displayManager: DisplayManager? = null
 
   override fun onAttachedToEngine(
-      @NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding
+    @NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding
   ) {
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, viewTypeId)
     channel.setMethodCallHandler(this)
 
     eventChannel = EventChannel(flutterPluginBinding.binaryMessenger, viewTypeEventsId)
     displayManager =
-        flutterPluginBinding.applicationContext.getSystemService(Context.DISPLAY_SERVICE) as
-            DisplayManager
+      flutterPluginBinding.applicationContext.getSystemService(Context.DISPLAY_SERVICE) as
+              DisplayManager
     val displayConnectedStreamHandler = DisplayConnectedStreamHandler(displayManager)
     eventChannel.setStreamHandler(displayConnectedStreamHandler)
-  }
-
-  companion object {
-    private const val viewTypeId = "presentation_displays_plugin"
-    private const val viewTypeEventsId = "presentation_displays_plugin_events"
-    private var displayManager: DisplayManager? = null
-
-    /** @hide */
-    @Suppress("unused", "DEPRECATION")
-    @JvmStatic
-    fun registerWith(registrar: PluginRegistry.Registrar) {
-      val channel = MethodChannel(registrar.messenger(), viewTypeId)
-      channel.setMethodCallHandler(PresentationDisplaysPlugin())
-
-      val eventChannel = EventChannel(registrar.messenger(), viewTypeEventsId)
-      displayManager =
-          registrar.activity()!!.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
-      val displayConnectedStreamHandler = DisplayConnectedStreamHandler(displayManager)
-      eventChannel.setStreamHandler(displayConnectedStreamHandler)
-    }
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -77,8 +57,8 @@ class PresentationDisplaysPlugin : FlutterPlugin, ActivityAware, MethodChannel.M
         try {
           val obj = JSONObject(call.arguments as String)
           Log.i(
-              TAG,
-              "Channel: method: ${call.method} | displayId: ${obj.getInt("displayId")} | routerName: ${
+            TAG,
+            "Channel: method: ${call.method} | displayId: ${obj.getInt("displayId")} | routerName: ${
               obj.getString("routerName")
             }"
           )
@@ -89,14 +69,14 @@ class PresentationDisplaysPlugin : FlutterPlugin, ActivityAware, MethodChannel.M
             val flutterEngine = createFlutterEngine(tag)
             flutterEngine?.let {
               flutterEngineChannel =
-                  MethodChannel(it.dartExecutor.binaryMessenger, "${viewTypeId}_engine")
+                MethodChannel(it.dartExecutor.binaryMessenger, "${viewTypeId}_engine")
               presentation = context?.let { it1 -> PresentationDisplay(it1, tag, display) }
               Log.i(TAG, "presentation: $presentation")
               presentation?.show()
 
               result.success(true)
             }
-                ?: result.error("404", "Can't find FlutterEngine", null)
+              ?: result.error("404", "Can't find FlutterEngine", null)
           } else {
             result.error("404", "Can't find display with displayId is $displayId", null)
           }
@@ -169,22 +149,22 @@ class PresentationDisplaysPlugin : FlutterPlugin, ActivityAware, MethodChannel.M
 }
 
 class DisplayConnectedStreamHandler(private var displayManager: DisplayManager?) :
-    EventChannel.StreamHandler {
+  EventChannel.StreamHandler {
   private var sink: EventChannel.EventSink? = null
   private var handler: Handler? = null
 
   private val displayListener =
-      object : DisplayManager.DisplayListener {
-        override fun onDisplayAdded(displayId: Int) {
-          sink?.success(1)
-        }
-
-        override fun onDisplayRemoved(displayId: Int) {
-          sink?.success(0)
-        }
-
-        override fun onDisplayChanged(p0: Int) {}
+    object : DisplayManager.DisplayListener {
+      override fun onDisplayAdded(displayId: Int) {
+        sink?.success(1)
       }
+
+      override fun onDisplayRemoved(displayId: Int) {
+        sink?.success(0)
+      }
+
+      override fun onDisplayChanged(p0: Int) {}
+    }
 
   override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
     sink = events
