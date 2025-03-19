@@ -30,8 +30,10 @@ class PresentationDisplaysPlugin : FlutterPlugin, ActivityAware, MethodChannel.M
   private var context: Context? = null
   private var presentation: PresentationDisplay? = null
   private var displayManager: DisplayManager? = null
-  private const val viewTypeId = "presentation_displays_plugin"
-  private const val viewTypeEventsId = "presentation_displays_plugin_events"
+  companion object {
+    const val viewTypeId = "presentation_displays_plugin"
+    const val viewTypeEventsId = "presentation_displays_plugin_events"
+  }
 
   override fun onAttachedToEngine(
     @NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding
